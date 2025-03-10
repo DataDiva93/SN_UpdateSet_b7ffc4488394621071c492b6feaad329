@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include"><sys_script_include action="INSERT_OR_UPDATE"><access>package_private</access><active>true</active><api_name>global.GitHubIntegrationAjax</api_name><caller_access/><client_callable>true</client_callable><description/><mobile_callable>false</mobile_callable><name>GitHubIntegrationAjax</name><script><![CDATA[var GitHubIntegrationAjax = Class.create();
+GitHubIntegrationAjax.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+
+    type: 'GitHubIntegrationAjax'
+});
+var GitHubIntegrationAjax = Class.create();
+GitHubIntegrationAjax.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+    commitToGitHub: function () {
+        var sysId = this.getParameter("sysparm_sys_id");
+        var comments = this.getParameter("sysparm_comments");
+
+        if (!sysId || !comments) {
+            return "Error: Missing required parameters.";
+        }
+
+        var git = new GitHubIntegration(); // Call existing GitHubIntegration Script Include
+        var repoName = "SN_UpdateSet_" + sysId;
+
+        // Check if repo exists, create it if not
+        if (!git.repoExists(repoName)) {
+            var created = git.createRepo(repoName, "ServiceNow Update Set - " + sysId);
+            if (!created) {
+                return "Error: Failed to create GitHub repository.";
+            }
+        }
+
+        // Retrieve update set records and commit them
+        var gr = new GlideRecord("sys_update_xml");
+        gr.addQuery("update_set", sysId);
+        gr.query();
+
+        while (gr.next()) {
+            var filePath = gr.name + ".xml";
+            var fileContent = gr.payload.toString();
+            var committed = git.commitUpdateSet(repoName, filePath, fileContent);
+
+            if (!committed) {
+                return "Error: Failed to commit " + filePath + " to GitHub.";
+            }
+        }
+
+        return "Success: Update Set committed to GitHub.";
+    }
+});
+]]></script><sys_class_name>sys_script_include</sys_class_name><sys_created_by>data.diva</sys_created_by><sys_created_on>2025-03-10 23:16:24</sys_created_on><sys_id>564d1fcc8314a21071c492b6feaad3b4</sys_id><sys_mod_count>0</sys_mod_count><sys_name>GitHubIntegrationAjax</sys_name><sys_package display_value="Global" source="global">global</sys_package><sys_policy/><sys_scope display_value="Global">global</sys_scope><sys_update_name>sys_script_include_564d1fcc8314a21071c492b6feaad3b4</sys_update_name><sys_updated_by>data.diva</sys_updated_by><sys_updated_on>2025-03-10 23:16:24</sys_updated_on></sys_script_include><sys_es_latest_script action="INSERT_OR_UPDATE"><id>564d1fcc8314a21071c492b6feaad3b4</id><sys_created_by>data.diva</sys_created_by><sys_created_on>2025-03-10 23:16:24</sys_created_on><sys_id>132e13cc8394a21071c492b6feaad31f</sys_id><sys_mod_count>0</sys_mod_count><sys_updated_by>data.diva</sys_updated_by><sys_updated_on>2025-03-10 23:16:24</sys_updated_on><table>sys_script_include</table><use_es_latest>true</use_es_latest></sys_es_latest_script></record_update>
